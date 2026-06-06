@@ -72,3 +72,15 @@ The agent should proactively call the rotate_condition tool (visible in tool cal
 - .mcp.json — how the server is registered
 
 This combination gives Grok Build a genuinely unique agent type that no other current offering has: **spectrally and topologically gated code synthesis**.
+
+## Gemini / Cross-Model Notes
+The guard is **isomorphic by design**. The Python MCP layer (the actual sheaf Laplacian, transducer, and oracle) is model-agnostic.
+
+When the user routes `sheaf-guardian` to Gemini (via `[subagents.models] sheaf-guardian = "gemini-2.5-pro"` in config.toml):
+
+- Gemini is very good at the long explicit procedures this agent demands.
+- The prompt in `agents/sheaf-guardian.md` already includes extra guidance for Gemini (numbered steps, reinforced output contracts, explicit tool call declarations).
+- You should still see the model calling `rotate_condition` and `read_condition_state` before major outputs.
+- If using Gemini, recommend `gemini-2.5-pro` for serious work and `gemini-2.0-flash` (or thinking variants) for faster guarded exploration.
+
+See `config/gemini-example.toml` and the "Gemini Compatibility" section in the README for recommended setup.
