@@ -67,6 +67,9 @@ if HAVE_FASTMCP:
             "obstruction": pulse_result.get("obstruction"),
             "delta_lambda": pulse_result["delta_lambda"],
             "consistency_radius": TRANSDUCER.ComputeConsistencyRadius(),
+            # CodeRabbit-style linkage review info - best "maneuver space" for infil/exfil of truth
+            "hot_linkages": pulse_result.get("hot_linkages", {}),
+            "linkage_review": "Review these high-disagreement restriction maps (edges) between semantic stalks for refactoring opportunities to streamline truth.",
         }
 
         if not pulse_result["kernel_member"] and pulse_result.get("obstruction"):
@@ -76,7 +79,7 @@ if HAVE_FASTMCP:
                 list(TRANSDUCER.state.stalks.keys()),
             )
             decision["oracle_action"] = oracle_action
-            decision["recommendation"] = "DO NOT EMIT. Resolve obstruction or request oracle correction first."
+            decision["recommendation"] = "DO NOT EMIT. Resolve obstruction or request oracle correction first. Focus infil/exfil at the hot_linkages above."
 
         decision["pulse_summary"] = pulse_result
         return decision

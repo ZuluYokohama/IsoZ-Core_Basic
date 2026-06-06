@@ -1,7 +1,7 @@
 {
   "name": "specialized-agents",
   "version": "0.1.0",
-  "description": "Grok Build plugin providing specialized agent types with unique mathematical and verification features. Flagship: sheaf-guardian - a subagent type that enforces topological/sheaf consistency (Laplacian energy, neural diffusion conditions) on semantic encodings and generated artifacts before output.",
+  "description": "Grok Build plugin providing specialized agent types with unique mathematical and verification features. Flagship: sheaf-guardian - a subagent type that enforces topological/sheaf consistency (Laplacian energy, neural diffusion conditions) on semantic encodings and generated artifacts before output. Includes sheaf-coderabbit CLI for CodeRabbit-style local reviews focused on infil/exfil of truth at linkage points (hot restriction maps).",
   "author": {
     "name": "GrokBuild Workspace"
   },

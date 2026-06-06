@@ -7,7 +7,7 @@ AST / semantic mutations using sheaf-theoretic consistency (simulated + hooks fo
 
 Key concepts implemented (faithful to spec):
 - CRMtex stalk mapping (simplified: symbol nodes -> vector stalks)
-- Sheaf Laplacian L⁰_F computation on a tiny Vietoris-Rips style graph
+- Sheaf Laplacian L°_F computation on a tiny Vietoris-Rips style graph
 - pulse_mid_activity_evaluation() that returns energy + kernel membership
 - ComputeConsistencyRadius()
 - Integration points for neural-sheaf-diffusion (PyG) and Lean-verified kernels
@@ -34,12 +34,15 @@ class Stalk:
 class ConditionState:
     """Current global section / coherence state of the sheaf over the workspace fragment."""
     stalks: Dict[str, Stalk] = field(default_factory=dict)
-    edges: List[Tuple[str, str]] = field(default_factory=list)  # restriction map edges (v ≼ e)
+    edges: List[Tuple[str, str]] = field(default_factory=list)  # restriction map edges (v ≼ e) - these are the "linkages"
+    edge_energies: Dict[Tuple[str, str], float] = field(default_factory=dict)  # per-linkage contribution to truth/consistency
     last_energy: float = 0.0
     last_kernel: bool = True
     last_obstruction: Optional[str] = None
     pulse_count: int = 0
     delta_lambda: float = 0.0   # topological coherence shift
+    # "Truth" metadata: external facts or requirements that were infiltrated as additional constraints
+    infiltrated_truth: List[str] = field(default_factory=list)
 
 
 class HybridConditionStateTransducer:
@@ -101,14 +104,14 @@ class HybridConditionStateTransducer:
                     edges.append((a, b))
         return edges
 
-    def compute_sheaf_laplacian_energy(self, stalks: Dict[str, Stalk], edges: List[Tuple[str, str]]) -> Tuple[float, bool, Optional[str]]:
+    def compute_sheaf_laplacian_energy(self, stalks: Dict[str, Stalk], edges: List[Tuple[str, str]]) -> Tuple[float, bool, Optional[str], Dict[Tuple[str, str], float]]:
         """
-        Node β: Compute L⁰_F = (δ⁰)* δ⁰ and its kernel membership.
+        Node β: Compute L°_F = (δ°)* δ° and its kernel membership.
         Real version would use persistent-sheaf-laplacian + PyG BuNN layers.
         Here we do a simple graph Laplacian energy on the 0-cochains (stalk vectors).
         """
         if not stalks:
-            return 0.0, True, None
+            return 0.0, True, None, {}
 
         ids = list(stalks.keys())
         idx = {nid: i for i, nid in enumerate(ids)}
@@ -117,6 +120,7 @@ class HybridConditionStateTransducer:
         # Degree matrix + adjacency (undirected for 0-form laplacian simulation)
         deg = [0] * n
         adj_energy = 0.0
+        edge_energies: Dict[Tuple[str, str], float] = {}
         for u, v in edges:
             if u in idx and v in idx:
                 i, j = idx[u], idx[v]
@@ -127,6 +131,7 @@ class HybridConditionStateTransducer:
                 dv = stalks[v].vector
                 diff = sum((x - y) ** 2 for x, y in zip(du, dv))
                 adj_energy += diff
+                edge_energies[(u, v)] = round(diff, 6)  # per-linkage "truth" contribution (lower is more consistent linkage)
 
         # Very simplified quadratic form energy ~ x^T L x
         # Add self-degree penalty
@@ -137,9 +142,11 @@ class HybridConditionStateTransducer:
         is_kernel = total_energy < 1e-3
         obstruction = None
         if not is_kernel:
-            obstruction = f"H1-knot-like: energy={total_energy:.6f} on {len(edges)} restriction edges"
+            # Highlight the worst linkages for "streamlining"
+            worst_linkages = sorted(edge_energies.items(), key=lambda x: x[1], reverse=True)[:3]
+            obstruction = f"H1-knot-like: energy={total_energy:.6f} on {len(edges)} restriction edges. Hot linkages (infil/exfil points to review): {worst_linkages}"
 
-        return total_energy, is_kernel, obstruction
+        return total_energy, is_kernel, obstruction, edge_energies
 
     def pulse_mid_activity_evaluation(self, artifact: str, context: str = "generation") -> Dict[str, Any]:
         """
@@ -153,13 +160,14 @@ class HybridConditionStateTransducer:
         new_edges = self._build_edges(self.state.stalks)
         self.state.edges = list(set(self.state.edges + new_edges))  # simplistic union
 
-        energy, in_kernel, obstruction = self.compute_sheaf_laplacian_energy(
+        energy, in_kernel, obstruction, edge_energies = self.compute_sheaf_laplacian_energy(
             self.state.stalks, self.state.edges
         )
 
         self.state.last_energy = energy
         self.state.last_kernel = in_kernel
         self.state.last_obstruction = obstruction
+        self.state.edge_energies = edge_energies
         self.state.pulse_count += 1
 
         # Simulate topological coherence shift (Δλ₁)
@@ -173,6 +181,7 @@ class HybridConditionStateTransducer:
             "pulse_count": self.state.pulse_count,
             "stalk_count": len(self.state.stalks),
             "edge_count": len(self.state.edges),
+            "hot_linkages": dict(sorted(edge_energies.items(), key=lambda x: x[1], reverse=True)[:5]),  # top problematic linkages for review
             "verdict": "CONSISTENT" if in_kernel else "OBSTRUCTED",
         }
 
@@ -192,6 +201,11 @@ class HybridConditionStateTransducer:
             "pulse_count": self.state.pulse_count,
             "delta_lambda": self.state.delta_lambda,
             "consistency_radius": self.ComputeConsistencyRadius(),
+            "linkages": {
+                "total_edges": len(self.state.edges),
+                "hot_linkages": dict(sorted(self.state.edge_energies.items(), key=lambda x: x[1], reverse=True)[:5]) if hasattr(self.state, 'edge_energies') else {},
+            },
+            "infiltrated_truth": getattr(self.state, 'infiltrated_truth', []),
         }
 
     def reset(self):
@@ -204,12 +218,20 @@ TRANSDUCER = HybridConditionStateTransducer(dim=8)
 
 
 def pulse(artifact: str, context: str = "agent-generation") -> Dict[str, Any]:
-    """Convenience wrapper used by the MCP server."""
+    """Convenience wrapper used by the MCP server. This is a primary INFIL point for artifacts."""
     return TRANSDUCER.pulse_mid_activity_evaluation(artifact, context)
 
 
 def read_state() -> Dict[str, Any]:
-    return TRANSDUCER.get_state()
+    """Primary EXFIL point for the current truth (energy, linkages, obstructions) and state."""
+    state = TRANSDUCER.get_state()
+    # Inject linkage details for CodeRabbit-style review / streamlining
+    state["linkages"] = {
+        "edge_count": len(TRANSDUCER.state.edges),
+        "hot_linkages": getattr(TRANSDUCER.state, 'edge_energies', {}),
+    }
+    state["infiltrated_truth_count"] = len(getattr(TRANSDUCER.state, 'infiltrated_truth', []))
+    return state
 
 
 if __name__ == "__main__":
