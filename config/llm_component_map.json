@@ -1,0 +1,197 @@
+{
+  "map_type": "geometric_prime_0dim_structure_map",
+  "epistemic_bounds": "1917HRS_CONVERGENCE_UPDATE",
+  "stalks_Fv": [
+    "forge-agent-system-prompt",
+    "lmstudio-forge-preset",
+    "forge-agent-compact",
+    "pi-forge-integration",
+    "wormhole-sans-integration",
+    "wormhole-function-router",
+    "atft-sheaf-consensus",
+    "atft-falsification",
+    "atft-vendored-sheaf-analysis",
+    "atft-vendored-persistent-homology",
+    "atft-vendored-topology",
+    "atft-vendored-discrete-morse",
+    "sheaf-stack-the-scout",
+    "sheaf-stack-the-smith",
+    "sheaf-stack-the-anvil",
+    "sheaf-stack-the-forge-skill",
+    "sheaf-stack-topological-dev-loop-skill",
+    "sheaf-stack-mcp-server",
+    "analysis-dashboard-v1-mcp",
+    "analysis-dashboard-v1-skill-forge",
+    "analysis-dashboard-v1-agents",
+    "analysis-dashboard-v2-mcp",
+    "analysis-dashboard-v2-skill",
+    "analysis-dashboard-zero-forge-prompt",
+    "analysis-dashboard-zero-forge-compact",
+    "analysis-dashboard-zero-forge-tool-executor",
+    "wormhole-geodesic-search",
+    "wormhole-term-series-engine",
+    "wormhole-kim",
+    "transducer-pulse",
+    "bipartite-harvester",
+    "ast-sheaf-scanner",
+    "discrete-morse-pruner",
+    "topological-kv-governor",
+    "night-cycle-daemon",
+    "qlora-distillation-stub",
+    "pre-tool-use-hook",
+    "sheaf-condition-mcp",
+    "sheaf-coderabbit",
+    "zulu-yokohama-phase-lock",
+    "local-llm-gguf-dozen",
+    "rlm-bridge"
+  ],
+  "restriction_maps_Fe": [
+    [
+      "lmstudio-forge-preset",
+      "forge-agent-system-prompt",
+      "loads system_prompt_file, enables tool calling for forge_scan/test/gate/compare"
+    ],
+    [
+      "pi-forge-integration",
+      "lmstudio-forge-preset",
+      "LM Studio <-> Pi Agent Harness <-> Forge CLI via OpenAI-compatible API localhost:1234/v1"
+    ],
+    [
+      "pi-forge-integration",
+      "forge-agent-system-prompt",
+      "tool calls for the forge tools in the 7 Laws pipeline (SCAN -> SHAPE -> HEAT -> STRIKE -> SHIP)"
+    ],
+    [
+      "wormhole-sans-integration",
+      "wormhole-function-router",
+      "routes intent to transformation functions via FunctionCallSignature"
+    ],
+    [
+      "wormhole-sans-integration",
+      "wormhole-geodesic-search",
+      "finds valid solution pathways in the KIM with ContinuityGuard"
+    ],
+    [
+      "wormhole-sans-integration",
+      "wormhole-term-series-engine",
+      "executes the optimal path via Term-Series, outputs full SolutionPathway as KIM artifact"
+    ],
+    [
+      "wormhole-sans-integration",
+      "wormhole-kim",
+      "KnowledgeInformationManifold with KnowledgeNode and CryptologicKey for closed-loop state transformation"
+    ],
+    [
+      "wormhole-kim",
+      "atft-sheaf-consensus",
+      "sheaf cochain for the closed-loop (from REGIME_LAMINAR to REGIME_FRUSTRATED)"
+    ],
+    [
+      "sheaf-condition-mcp",
+      "transducer-pulse",
+      "exposes rotate_condition / read_condition_state / discrete_morse_prune / topological_kv_govern / start_night_cycle / analyze_llm_components for the agents"
+    ],
+    [
+      "transducer-pulse",
+      "bipartite-harvester",
+      "on successful pulse with +\u0394\u03bb1, calls harvest_geometry_resolution to log Shape Pair (pre-obstruction + post-H0) to shape_pairs.jsonl"
+    ],
+    [
+      "night-cycle-daemon",
+      "transducer-pulse",
+      "dispatches the pulse (with AST scanner + discrete_morse prune + Gini gate) for resolution in L0 fibers"
+    ],
+    [
+      "night-cycle-daemon",
+      "bipartite-harvester",
+      "on successful resolution (L0_F ~0, positive \u0394\u03bb1), harvests via the oracle"
+    ],
+    [
+      "night-cycle-daemon",
+      "qlora-distillation-stub",
+      "on batch 100 Shape Pairs, invokes the stub with \u0394\u03bb1-weighted loss for the Omega loop"
+    ],
+    [
+      "night-cycle-daemon",
+      "topological-kv-governor",
+      "integrates the governor during resolutions for context management in long 'component' analysis"
+    ],
+    [
+      "qlora-distillation-stub",
+      "local-llm-gguf-dozen",
+      "the local disk LLMs (the 0-dim stalks) ingest the shape_pairs as (obstruction -> resolution) pairs, loss weighted by \u0394\u03bb1 to reinforce coherence"
+    ],
+    [
+      "pre-tool-use-hook",
+      "sheaf-coderabbit",
+      "routes proposed edit (to component code/prompts/presets/agents/mcp) through the coderabbit --format json for the A4 gate"
+    ],
+    [
+      "sheaf-coderabbit",
+      "transducer-pulse",
+      "uses the pulse for the Sparsification & Preservation Report (pre/post cell counts, \u03b2_k preservation, post-prune energy, hot linkages)"
+    ],
+    [
+      "ast-sheaf-scanner",
+      "discrete-morse-pruner",
+      "scan_ast_to_rips_complex builds the complex from AST, then prune_complex_to_critical for the reduced Morse boundary (Berkouk-Ginot isometry for \u03b2_k / H0 / H1 preservation)"
+    ],
+    [
+      "transducer-pulse",
+      "ast-sheaf-scanner",
+      "pulse calls scan_ast_to_rips_complex first (real AST geometry, no toy), then prune, then spectral (betti/gini), then L0_F on the pruned"
+    ]
+  ],
+  "prune_info": {
+    "pruned_ratio": 0.5
+  },
+  "coherence": {
+    "overall_energy": 4.88074616,
+    "overall_gini": 0.0,
+    "overall_verdict": "OBSTRUCTED",
+    "hot_linkages": [
+      [
+        "ast-sheaf-scanner",
+        "discrete-morse-pruner",
+        "scan_ast_to_rips_complex builds the complex from AST, then prune_complex_to_critical for the reduced Morse boundary (Berkouk-Ginot isometry for \u03b2_k / H0 / H1 preservation)"
+      ]
+    ],
+    "recommended_coherent_integrations": [
+      [
+        "lmstudio-forge-preset",
+        "forge-agent-system-prompt",
+        "loads system_prompt_file, enables tool calling for forge_scan/test/gate/compare"
+      ],
+      [
+        "pi-forge-integration",
+        "lmstudio-forge-preset",
+        "LM Studio <-> Pi Agent Harness <-> Forge CLI via OpenAI-compatible API localhost:1234/v1"
+      ],
+      [
+        "pi-forge-integration",
+        "forge-agent-system-prompt",
+        "tool calls for the forge tools in the 7 Laws pipeline (SCAN -> SHAPE -> HEAT -> STRIKE -> SHIP)"
+      ],
+      [
+        "wormhole-sans-integration",
+        "wormhole-function-router",
+        "routes intent to transformation functions via FunctionCallSignature"
+      ],
+      [
+        "wormhole-sans-integration",
+        "wormhole-geodesic-search",
+        "finds valid solution pathways in the KIM with ContinuityGuard"
+      ]
+    ],
+    "note": "The component manifold shows high coherence on core laws/tools/prompts, potential obstructions on cross-integration (e.g., the Forge prompt tools not perfectly matching all mcp schemas in the dashboards, the night cycle not yet fully using the kv governor for the full C:\\CLAUDE2 archive context, the pi-integration showing the harness but not wired to the pre-tool-use hook or the harvester, the WORMHOLE closed-loop powerful but not yet using the harvester for positive pairs, the multiple Forge versions (v1/v2/Zero/sheaf-stack) not fully aligned with the transducer's pulse for coherence). The map enables the shift by making these visible and actionable via the harvester/distillation."
+  },
+  "how_to_inference_against": "Load this JSON as context for local LLMs. When asked to 'integrate these LLM components' or 'propose a new agent/skill/mcp for X', only propose integrations that would pass the pulse (low energy, low Gini on the component manifold). Use the hot linkages to identify brittle points to resolve via the harvester/distillation. Use the recommended coherent integrations to strengthen the manifold.",
+  "local_hardware_implementation": {
+    "hardware": "CPU-RAM-GPU with 6GB UMA (or 8-16GB as in the 70B extension), ability to poll and start sudo gitbash 2nd session",
+    "local_llms": "the dozens of GGUF on disk as the 0-dim observation stalks in the map itself (different models for scanning, spectral, harvester, distillation, or as the 'stalks' being mapped)",
+    "sudo_gitbash_sessions": "for isolated L0 fibers where the 'component mutation/resolution' experiments happen (the night cycle with target 'llm_component_analysis')",
+    "i_o_harness": "the mcp for hardware polling during long analysis, the kv governor + RLM for the massive C:\\CLAUDE2 context (6889 files in one dir, thousands of .py/.md/.json, full theory docs)",
+    "the_map_as_truth": "the 1:1 true-to-life of coherent LLM component integration \u2013 the only value there ever was for the integrated system"
+  },
+  "order_of_magnitude_shift": "Instead of ad-hoc or manual integration of these powerful but loosely wired LLM components (the Forge prompts are great but not fully aligned with the transducer's pulse for coherence, the WORMHOLE closed-loop is powerful but not yet using the harvester for positive pairs, the night cycle is the orchestrator but not yet targeting the components themselves, the pi-integration shows the harness but not the full topological map, the multiple Forge versions in the dashboards are not unified), you have a living, pruneable, self-improving topological 'map' of the entire LLM component manifold that the local LLMs can 'inference against' to propose only coherent integrations, the night cycle can autonomously experiment with the wirings in isolated fibers using the local LLMs as the stalks, the harvester/distillation can improve the LLMs based on what integrations 'work' (positive \u0394\u03bb1), the kv/RLM/mcp/hook/hardware polling make it all runnable on the user's local setup without OOM or drift, the map is the 'truth' for the integrated system (the 'only value there ever was' is the coherent H0 composition of these components). This enables massive parallel local experimentation with component integrations, deterministic composition (only coherent H0 integrations 'exist' or are promoted), self-improving LLMs specialized for topological component analysis, hardware-optimized analysis of huge archives, and the map as the ground truth for what the integrated system 'should' be."
+}

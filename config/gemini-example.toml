@@ -1,0 +1,71 @@
+# config/gemini-example.toml
+#
+# Example configuration for using the specialized-agents plugin
+# (specifically the sheaf-guardian agent type) with Google Gemini models
+# in an "isomorphic" way — i.e. preserving the same strict topological
+# guardrail behavior and output contracts as when using Grok.
+#
+# How to use:
+#   1. Copy the relevant sections into your project `.grok/config.toml`
+#      or your user `~/.grok/config.toml`
+#   2. Make sure you have Gemini API access configured in Grok Build
+#      (see custom-models docs or set the appropriate provider key).
+#
+# Recommended models (as of 2026):
+#   - gemini-2.5-pro          → best reasoning + long context for complex sheaf analysis
+#   - gemini-2.0-flash        → fast, cheaper for lighter guarded tasks
+#   - gemini-2.0-flash-thinking-exp (or similar) → good for step-by-step guarded work
+
+[subagents]
+# You can set a global default, but we recommend per-agent overrides
+# so only the high-stakes sheaf-guardian uses the (potentially more expensive) Gemini model.
+
+[subagents.models]
+# Route the sheaf-guardian agent type to Gemini while keeping other agents on Grok (or whatever default)
+sheaf-guardian = "gemini-2.5-pro"
+
+# Optional: also route related research/planning agents if you want the whole pipeline on Gemini
+# plan = "gemini-2.5-pro"
+# researcher = "gemini-2.5-pro"
+
+# You can also set capability modes or other subagent settings here if desired.
+# [subagents.toggle]
+# sheaf-guardian = true
+
+# -----------------------------------------------------------------------------
+# Why this gives "isomorphic" behavior
+# -----------------------------------------------------------------------------
+# The actual mathematical verification (sheaf Laplacian L⁰_F, condition state,
+# oracle offloading, sparse representation) lives in the Python MCP server
+# (scripts/mcp_server.py + rotary_condition_state.py etc.).
+#
+# This means:
+# - The guard logic is identical regardless of whether the LLM is Grok or Gemini.
+# - The only thing that changes is the *quality and reliability* of the LLM
+#   deciding when to call rotate_condition / read_condition_state and whether
+#   it respects the "CONSISTENT" verdict.
+#
+# Gemini is particularly good at:
+#   - Following long, explicitly numbered procedures
+#   - Producing consistent structured output (the required Sheaf Consistency Report)
+#   - Handling the large context needed for mapping many symbols to stalks
+#
+# Tips for best isomorphic results with Gemini:
+# - Use gemini-2.5-pro for the most important guarded work.
+# - The agent prompt (agents/sheaf-guardian.md) already contains Gemini-specific
+#   guidance (stronger emphasis on numbered steps and strict output contracts).
+# - Always trust the MCP tool results — they are the source of truth for "isomorphism".
+
+# -----------------------------------------------------------------------------
+# Alternative: Force the entire session (including parent) to Gemini
+# -----------------------------------------------------------------------------
+# If you want everything in a session to be Gemini-powered:
+#
+# In your shell / launch:
+#   grok --model gemini-2.5-pro
+#
+# Or in config.toml:
+# [models]
+# default = "gemini-2.5-pro"
+#
+# Then the sheaf-guardian will inherit it unless you override as shown above.

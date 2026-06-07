@@ -1,0 +1,14 @@
+{
+  "sheaf-condition-mcp": {
+    "type": "stdio",
+    "command": "python",
+    "args": [
+      "${GROK_PLUGIN_ROOT}/scripts/mcp_server.py"
+    ],
+    "env": {
+      "GROK_PLUGIN_ROOT": "${GROK_PLUGIN_ROOT}",
+      "PYTHONPATH": "${GROK_PLUGIN_ROOT}"
+    },
+    "description": "Sheaf Condition MCP Server - exposes rotate_condition and read_condition_state tools for topological consistency gating using sheaf Laplacians and neural diffusion state. Used by the sheaf-guardian agent type for high-assurance synthesis."
+  }
+}
