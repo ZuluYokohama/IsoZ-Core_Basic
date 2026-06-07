@@ -49,3 +49,26 @@ Thumbs.db
 # Grok / plugin dev
 .grok/
 sessions/
+
+# Generated large artifacts (prevent commit bloat like the 6.3M insertion incident)
+config/ternary*.json
+config/*ggufmap*.json
+shape_pairs.jsonl
+*.gguf
+*.safetensors
+*.bin
+*.pt
+*.pth
+__pycache__/
+*.pyc
+*.pkl
+temp/
+tmp/
+build/
+dist/
+# Model / inference side-cars that can be huge under 70B experiments
+*.cache
+llama.cpp/
+forks/
+# Keep small maps for the geometric prime record, but ignore monster ones
+# (the small ternary_70b_ggufmap.json and llm_component_map.json are intentionally tracked)

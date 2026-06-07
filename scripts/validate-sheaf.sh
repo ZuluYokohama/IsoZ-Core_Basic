@@ -31,7 +31,6 @@ check_file "$ROOT/scripts/hardware_piping.py"
 check_file "$ROOT/README.md"
 
 echo
-
 echo "== Agent frontmatter checks =="
 if grep -q 'name: sheaf-guardian' "$ROOT/agents/sheaf-guardian.md" && \
    grep -q 'description:' "$ROOT/agents/sheaf-guardian.md" && \
@@ -43,7 +42,6 @@ else
 fi
 
 echo
-
 echo "== MCP manifest =="
 if grep -q 'sheaf-condition-mcp\|sheaf-condition' "$ROOT/.mcp.json" && grep -q 'scripts/mcp_server.py' "$ROOT/.mcp.json"; then
   echo "OK: .mcp.json references the server script"
@@ -53,7 +51,6 @@ else
 fi
 
 echo
-
 echo "== Python syntax (basic) =="
 for py in scripts/*.py; do
   python -m py_compile "$py" && echo "OK syntax: $py" || { echo "FAIL syntax: $py"; fail=1; }

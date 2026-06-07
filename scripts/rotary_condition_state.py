@@ -7,7 +7,7 @@ AST / semantic mutations using sheaf-theoretic consistency (simulated + hooks fo
 
 Key concepts implemented (faithful to spec):
 - CRMtex stalk mapping (simplified: symbol nodes -> vector stalks)
-- Sheaf Laplacian L°_F computation on a tiny Vietoris-Rips style graph
+- Sheaf Laplacian L⁰_F computation on a tiny Vietoris-Rips style graph
 - pulse_mid_activity_evaluation() that returns energy + kernel membership
 - ComputeConsistencyRadius()
 - Integration points for neural-sheaf-diffusion (PyG) and Lean-verified kernels
@@ -20,6 +20,37 @@ import math
 import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
+
+try:
+    from scripts.discrete_morse import prune_stalk_complex
+    from scripts.ast_sheaf_scanner import scan_ast_to_rips_complex
+    from scripts.oracle import harvest_geometry_resolution
+except ImportError:
+    from discrete_morse import prune_stalk_complex
+    from ast_sheaf_scanner import scan_ast_to_rips_complex  # fallback
+    from oracle import harvest_geometry_resolution
+
+# Simple stubs for vendored ATFT spectral tools (in full, import from atft.vendored)
+def compute_betti_curves(morse_boundary: Any) -> Dict[int, List[float]]:
+    """Stub: compute Betti curves from the Morse boundary (number of components over 'filtration' simulated by size)."""
+    # In real: persistent homology on the boundary matrix
+    n = morse_boundary.shape[0] if hasattr(morse_boundary, 'shape') and morse_boundary.shape[0] > 0 else 1
+    # Simulate beta0 decreasing as 'epsilon' increases (more connections)
+    betti0 = [max(1, n - i) for i in range(min(5, n))]
+    return {0: betti0, 1: [0.0] * len(betti0)}  # H1 stub 0 for demo
+
+def extract_gini_trajectory(betti_k: Dict[int, List[float]]) -> float:
+    """Stub: Gini coefficient on the Betti curve as measure of 'disorder' / topological entropy."""
+    # Gini: inequality in the 'births/deaths' or curve values; high -> disordered
+    values = betti_k.get(0, [1.0])
+    if not values or sum(values) == 0:
+        return 0.0
+    sorted_v = sorted(values)
+    n = len(sorted_v)
+    cum = sum((i+1) * v for i, v in enumerate(sorted_v))
+    total = sum(values)
+    gini = (2 * cum / (n * total)) - (n + 1) / n if total > 0 else 0.0
+    return min(1.0, max(0.0, gini))
 
 
 @dataclass
@@ -104,14 +135,14 @@ class HybridConditionStateTransducer:
                     edges.append((a, b))
         return edges
 
-    def compute_sheaf_laplacian_energy(self, stalks: Dict[str, Stalk], edges: List[Tuple[str, str]]) -> Tuple[float, bool, Optional[str], Dict[Tuple[str, str], float]]:
+    def compute_sheaf_laplacian_energy(self, stalks: Dict[str, Stalk], edges: List[Tuple[str, str]]) -> Tuple[float, bool, Optional[str], Dict]:
         """
-        Node β: Compute L°_F = (δ°)* δ° and its kernel membership.
+        Node β: Compute L⁰_F = (δ⁰)* δ⁰ and its kernel membership.
         Real version would use persistent-sheaf-laplacian + PyG BuNN layers.
         Here we do a simple graph Laplacian energy on the 0-cochains (stalk vectors).
         """
         if not stalks:
-            return 0.0, True, None, {}
+            return 0.0, True, None, {}  # edge_energies empty for no stalks (UMA safe)
 
         ids = list(stalks.keys())
         idx = {nid: i for i, nid in enumerate(ids)}
@@ -148,18 +179,55 @@ class HybridConditionStateTransducer:
 
         return total_energy, is_kernel, obstruction, edge_energies
 
-    def pulse_mid_activity_evaluation(self, artifact: str, context: str = "generation") -> Dict[str, Any]:
+    def pulse_mid_activity_evaluation(self, artifact: str, context: str = "generation", apply_discrete_morse: bool = True) -> Dict[str, Any]:
         """
         Main entry called by MCP / agent before emitting candidate output.
         Returns the condition state after this pulse.
+
+        Per the Epistemic Bounds spec:
+        - Use real AST scanner (discard toy embedding) to build Vietoris-Rips complex from code geometry.
+        - Prune with Discrete Morse (acyclic matchings) to critical cells.
+        - Extract spectral signatures (Betti curves, Gini trajectory) on the pruned Morse boundary.
+        - Compute L^0_F on the sparsified complex.
+        - Gini > 0.8 or energy > 0 indicates disorder / obstruction (high topological entropy).
+        This couples real AST to ATFT tools for phase transition detection before any edit.
         """
-        new_stalks = self.map_to_stalks(artifact, context)
-        # Merge into current complex (growing the observed sheaf)
-        self.state.stalks.update(new_stalks)
+        # 1. Scan and Prune using real AST (Node α)
+        try:
+            pruned_complex, morse_boundary, critical_names = scan_ast_to_rips_complex(artifact)
+            # Use critical names as the 'stalks' for this pulse (real geometry)
+            pruned_stalk_count = sum(len(v) for v in critical_names.values()) if critical_names else 1
+            # For compatibility with existing state, create minimal stalks from critical names
+            new_stalks = {}
+            for dim, names in critical_names.items():
+                for name in names:
+                    vid = f"ast:{name}:{len(new_stalks)}"
+                    new_stalks[vid] = Stalk(node_id=vid, vector=[hash(name) % 10 / 10.0] * self.dim, metadata={"token": name, "dim": dim})
+            self.state.stalks = new_stalks  # replace with AST-derived for this evaluation
+            # Build simple edges from the pruned complex faces (restriction maps)
+            self.state.edges = []
+            for faces in pruned_complex.faces.values():
+                if len(faces) == 2:
+                    # map back approx
+                    self.state.edges.append((f"ast:node:{faces[0]}", f"ast:node:{faces[1]}"))
+        except Exception as e:
+            # Fallback to token if not valid code or parse fails
+            new_stalks = self.map_to_stalks(artifact, context)
+            self.state.stalks.update(new_stalks)
+            self.state.edges = self._build_edges(self.state.stalks)
+            pruned_complex = None
+            morse_boundary = None
+            critical_names = {}
+            pruned_stalk_count = len(self.state.stalks)
 
-        new_edges = self._build_edges(self.state.stalks)
-        self.state.edges = list(set(self.state.edges + new_edges))  # simplistic union
+        original_stalk_count = len(self.state.stalks)
+        original_edge_count = len(self.state.edges)
 
+        # 2. Extract Spectral Signatures on Critical Cells (Node β)
+        betti_k = compute_betti_curves(morse_boundary) if morse_boundary is not None else {0: [1.0]}
+        gini_curve = extract_gini_trajectory(betti_k)
+
+        # 3. Calculate Dirichlet Energy (L^0_F) on pruned
         energy, in_kernel, obstruction, edge_energies = self.compute_sheaf_laplacian_energy(
             self.state.stalks, self.state.edges
         )
@@ -173,7 +241,14 @@ class HybridConditionStateTransducer:
         # Simulate topological coherence shift (Δλ₁)
         self.state.delta_lambda = (energy * 0.3) + (0.01 * (self.state.pulse_count % 7))
 
-        return {
+        # Gini -> 1 indicates topological entropy/disorder
+        verdict = "CONSISTENT"
+        if energy > 0.0 or gini_curve > 0.8:
+            verdict = "OBSTRUCTED"
+            if not obstruction:
+                obstruction = f"H^1 Knot or High Entropy (Gini={gini_curve:.2f})"
+
+        result = {
             "energy": round(energy, 8),
             "kernel_member": in_kernel,
             "obstruction": obstruction,
@@ -181,9 +256,33 @@ class HybridConditionStateTransducer:
             "pulse_count": self.state.pulse_count,
             "stalk_count": len(self.state.stalks),
             "edge_count": len(self.state.edges),
-            "hot_linkages": dict(sorted(edge_energies.items(), key=lambda x: x[1], reverse=True)[:5]),  # top problematic linkages for review
-            "verdict": "CONSISTENT" if in_kernel else "OBSTRUCTED",
+            "hot_linkages": dict(sorted(edge_energies.items(), key=lambda x: x[1], reverse=True)[:5]),
+            "verdict": verdict,
+            "gini_curve": round(gini_curve, 4),
+            "betti_0": betti_k.get(0, []),
+            # Epistemic Bounds sparsification metadata
+            "sparsification_applied": morse_boundary is not None,
+            "original_stalk_count": original_stalk_count,
+            "original_edge_count": original_edge_count,
+            "pruned_stalk_count": pruned_stalk_count,
+            "sparsification_ratio": round(pruned_stalk_count / max(1, original_stalk_count), 4) if 'pruned_stalk_count' in locals() else 1.0,
+            "morse_boundary_shape": list(morse_boundary.shape) if morse_boundary is not None and hasattr(morse_boundary, 'shape') else None,
         }
+
+        # Geometry Harvester (Bipartite Router) integration for positive coherence shifts during L0->L3 flow
+        if in_kernel and self.state.delta_lambda > 0:
+            pre_obstruction = {"energy": "previous", "obstruction": self.state.last_obstruction} if self.state.last_obstruction else None
+            post_resolution = {
+                "verdict": verdict,
+                "energy": energy,
+                "gini": gini_curve,
+                "artifact_summary": artifact[:200] if isinstance(artifact, str) else str(artifact)[:200],
+                "critical_stalks": list(critical_names.values()) if 'critical_names' in locals() else [],
+            }
+            harvest_result = harvest_geometry_resolution(pre_obstruction, post_resolution, self.state.delta_lambda, list(self.state.stalks.keys()))
+            result["geometry_harvest"] = harvest_result
+
+        return result
 
     def ComputeConsistencyRadius(self) -> float:
         """Returns a radius within which stalks are considered coherent (toy)."""
@@ -217,9 +316,9 @@ class HybridConditionStateTransducer:
 TRANSDUCER = HybridConditionStateTransducer(dim=8)
 
 
-def pulse(artifact: str, context: str = "agent-generation") -> Dict[str, Any]:
-    """Convenience wrapper used by the MCP server. This is a primary INFIL point for artifacts."""
-    return TRANSDUCER.pulse_mid_activity_evaluation(artifact, context)
+def pulse(artifact: str, context: str = "agent-generation", apply_discrete_morse: bool = True) -> Dict[str, Any]:
+    """Convenience wrapper used by the MCP server. This is a primary INFIL point for artifacts. Forwards prune-first discipline."""
+    return TRANSDUCER.pulse_mid_activity_evaluation(artifact, context, apply_discrete_morse=apply_discrete_morse)
 
 
 def read_state() -> Dict[str, Any]:

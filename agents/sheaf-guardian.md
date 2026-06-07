@@ -20,7 +20,7 @@ description: |
   assistant: "I'll delegate to the sheaf-guardian subagent so every generated artifact is passed through the neural sheaf diffusion condition gate before being returned."
   <commentary>
   "Correct the first time" signals need for the unique topological verification features.
-  </commentary>
+  </commentany>
   </example>
 
   <example>

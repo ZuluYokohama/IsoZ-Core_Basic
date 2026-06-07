@@ -117,6 +117,40 @@ def handle_obstruction(energy: float, obstruction: Optional[str], stalks: List[s
         "stats": ORACLE.get_stats(),
     }
 
+# Geometry Harvester (Bipartite Router for positive resolutions - Node γ activation)
+def harvest_geometry_resolution(pre_obstruction: Optional[Dict], post_resolution: Dict, delta_lambda: float, stalks: List[str]) -> Dict[str, Any]:
+    """
+    The Geometry Harvester (Bipartite Router activation).
+    When a positive coherence shift (Δλ₁) is achieved during L0 → L3 upward flow,
+    harvest the Shape Pair: (pre-state obstruction, post-state verified H^0 resolution map).
+    Log to shape_pairs.jsonl for the Omega Feedback Loop / QLoRA distillation.
+    """
+    if delta_lambda <= 0:
+        return {"action": "no_positive_shift", "delta": delta_lambda}
+
+    pair = {
+        "pre_state": pre_obstruction or {"type": "initial", "energy": "unknown"},
+        "post_state": post_resolution,
+        "delta_lambda": delta_lambda,
+        "stalks_involved": stalks[:12],
+        "timestamp": time.time(),
+        "knot_id": hashlib.sha256(f"resolution:{delta_lambda}:{time.time()}".encode()).hexdigest()[:16],
+    }
+
+    # Log to shape_pairs.jsonl (append for continuous harvesting)
+    try:
+        with open("shape_pairs.jsonl", "a", encoding="utf-8") as f:
+            f.write(json.dumps(pair) + "\n")
+    except Exception as e:
+        return {"action": "harvest_failed", "error": str(e)}
+
+    return {
+        "action": "geometry_harvested",
+        "shape_pair": pair,
+        "logged_to": "shape_pairs.jsonl",
+        "stats": {"total_harvested": len(ORACLE.offloaded) + 1}  # reuse for count
+    }
+
 
 if __name__ == "__main__":
     print("Oracle self-test")
