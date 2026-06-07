@@ -316,9 +316,9 @@ class HybridConditionStateTransducer:
 TRANSDUCER = HybridConditionStateTransducer(dim=8)
 
 
-def pulse(artifact: str, context: str = "agent-generation") -> Dict[str, Any]:
-    """Convenience wrapper used by the MCP server. This is a primary INFIL point for artifacts."""
-    return TRANSDUCER.pulse_mid_activity_evaluation(artifact, context)
+def pulse(artifact: str, context: str = "agent-generation", apply_discrete_morse: bool = True) -> Dict[str, Any]:
+    """Convenience wrapper used by the MCP server. This is a primary INFIL point for artifacts. Forwards prune-first discipline."""
+    return TRANSDUCER.pulse_mid_activity_evaluation(artifact, context, apply_discrete_morse=apply_discrete_morse)
 
 
 def read_state() -> Dict[str, Any]:
